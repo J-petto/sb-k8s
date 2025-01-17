@@ -32,22 +32,6 @@ jobs:
           body: ${{ steps.create_tag.outputs.changelog }}
           draft: false
           prerelease: false
-  deploy:
-    name: 쿠버네티스 배포
-    needs: [ makeTagAndRelease, buildImageAndPush ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: azure/k8s-set-context@v2
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG }}
-      - name: set lower case owner name
-        run: |
-          echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
-        env:
-          OWNER: '${{ github.repository_owner }}'
-      - run: |
-          kubectl set image deployment/sb-k8s-2501 sb-k8s-2501=ghcr.io/${{ env.OWNER_LC }}/sb-k8s-2501:${{ needs.makeTagAndRelease.outputs.tag_name }}
   buildImageAndPush:
     name: 도커 이미지 빌드와 푸시
     needs: makeTagAndRelease
@@ -80,3 +64,20 @@ jobs:
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/sb-k8s:${{ needs.makeTagAndRelease.outputs.tag_name }},
             ghcr.io/${{ env.OWNER_LC }}/sb-k8s:latest
+
+  deploy:
+    name: 쿠버네티스 배포
+    needs: [ makeTagAndRelease, buildImageAndPush ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: azure/k8s-set-context@v2
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+      - name: set lower case owner name
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >> ${GITHUB_ENV}
+        env:
+          OWNER: '${{ github.repository_owner }}'
+      - run: |
+          kubectl set image deployment/sb-k8s-2501 sb-k8s-2501=ghcr.io/${{ env.OWNER_LC }}/sb-k8s:${{ needs.makeTagAndRelease.outputs.tag_name }}
