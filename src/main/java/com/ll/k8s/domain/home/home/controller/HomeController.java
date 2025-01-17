@@ -14,7 +14,7 @@ public class HomeController {
     @ResponseBody
     public String home() {
 
-        return "home";
+        return "try";
     }
 
     @GetMapping("/jwtSecretKey")
